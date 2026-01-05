@@ -64,7 +64,7 @@ def main():
         #     print(f"history: {history}")
         
     finally:
-        #pipeline.close()
+        pipeline.close()
         print("FINI")
 
 
