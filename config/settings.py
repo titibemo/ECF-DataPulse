@@ -49,8 +49,8 @@ class ScraperQuotesConfig:
 
 @dataclass
 class APIConfig:
-    base_url: str = "https://api-adresse.data.gouv.fr/search/"
-    #api_key: str = os.getenv("S3_SECRET_KEY", "minioadmin123")
+    base_url: str = "https://api-adresse.data.gouv.fr/"
+    api_key: str = os.getenv("API_KEY", "")
 
 @dataclass
 class PostgresConfig:

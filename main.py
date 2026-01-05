@@ -5,6 +5,8 @@
 #pipelines
 from src.pipelines.pipeline_quotes import QuotesPipeline
 from src.pipelines.pipeline_books import BooksPipeline
+from src.pipelines.pipeline_api import APIPipeline
+from src.pipelines.pipeline_excel import ExcelPipeline
 
 #logging
 from utils.logger import setup_logging
@@ -16,6 +18,8 @@ from utils.cli_args import get_cli_args
 PIPELINES = {
     "quotespipeline": QuotesPipeline,
     "bookspipeline": BooksPipeline,
+    "apipipeline": APIPipeline,
+    "excelpipeline": ExcelPipeline,
 }
 
 
@@ -30,41 +34,48 @@ def main():
         raise ValueError(f"Pipeline inconnue: {args.pipeline}")
 
     pipeline = pipeline_cls()
-
     
     try:
-        stats = pipeline.run(
-            max_pages=args.pages,
-        )
-    
-     # Exports
-        if args.export_csv:
-            ref = pipeline.export_csv()
-            print(f"\nCSV exported: {ref}")
+        if pipeline_cls != APIPipeline and pipeline_cls != ExcelPipeline:
+            stats = pipeline.run(
+                max_pages=args.pages,
+            )
         
-        if args.export_json:
-            ref = pipeline.export_json()
-            print(f"JSON exported: {ref}")
-        
-        if args.backup:
-            ref = pipeline.create_backup()
-            print(f"Backup created: {ref}")
+        # Exports
+            if args.export_csv:
+                ref = pipeline.export_csv()
+                print(f"\nCSV exported: {ref}")
+            
+            if args.export_json:
+                ref = pipeline.export_json()
+                print(f"JSON exported: {ref}")
+            
+            if args.backup:
+                ref = pipeline.create_backup()
+                print(f"Backup created: {ref}")
 
-         # Analytics
-        # analytics = pipeline.get_analytics()
-        # print("\n" + "="*50)
-        # print("ANALYTICS")
-        # print("="*50)
+            # Analytics
+            # analytics = pipeline.get_analytics()
+            # print("\n" + "="*50)
+            # print("ANALYTICS")
+            # print("="*50)
 
-        # overview = analytics.get("overview", {})
-        # histories = analytics.get("scraping_history", [])
-        # print(f"Total products: {overview.get('total_products', 0)}")
-        # print(f"Total logs: {overview.get('total_logs', 0)}")
-        # for history in histories:
-        #     print(f"history: {history}")
+            # overview = analytics.get("overview", {})
+            # histories = analytics.get("scraping_history", [])
+            # print(f"Total products: {overview.get('total_products', 0)}")
+            # print(f"Total logs: {overview.get('total_logs', 0)}")
+            # for history in histories:
+            #     print(f"history: {history}")
+
+        elif pipeline_cls == APIPipeline:
+            pipeline.run(args.city)
+        elif pipeline_cls == ExcelPipeline:
+            pipeline.run()
+
         
     finally:
-        pipeline.close()
+        if pipeline_cls != APIPipeline and pipeline_cls != ExcelPipeline:
+            pipeline.close()
         print("FINI")
 
 
