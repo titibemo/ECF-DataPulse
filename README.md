@@ -324,7 +324,7 @@ To install and set up the project, follow these steps:
  
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-username/project-name.git
+git clone https://github.com/titibemo/ECF-DataPulse
 ```
 
 2. Create a virtual environment to isolate dependencies : Navigate to the project root, open a terminal and run the followinf commands:
