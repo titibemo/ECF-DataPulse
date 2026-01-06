@@ -574,6 +574,7 @@ python main.py --pipelines bookspipeline
 python main.py --pipeline bookspipeline --pages 10
 
 ```
+**NOTE**: Pictures are automatically downloaded !
 
 ### Quotes Pipeline 
 
