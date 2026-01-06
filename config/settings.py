@@ -15,9 +15,9 @@ class MinIOConfig:
     access_key: str = os.getenv("S3_ACCESS_KEY", "minioadmin")
     secret_key: str = os.getenv("S3_SECRET_KEY", "minioadmin123")
     secure: bool = os.getenv("S3_SECURE", "false").lower() == "true"
-    bucket_images:str = "author-images"
-    bucket_exports:str = "quotes-exports"
-    bucket_backups:str = "quotes-backups"
+    bucket_images:str = "images"
+    bucket_exports:str = "exports"
+    bucket_backups:str = "backups"
 
 @dataclass
 class MongoDBConfig:
@@ -54,11 +54,11 @@ class APIConfig:
 
 @dataclass
 class PostgresConfig:
-    host: str = os.getenv("PG_HOST", "localhost")
-    port: int = int(os.getenv("PG_PORT", "5432"))
-    username: str = os.getenv("PG_USER", "postgres")
-    password: str = os.getenv("PG_PASSWORD", "postgres123")
-    database: str = os.getenv("PG_DB", "scraping_db")
+    host: str = os.getenv("POSTGRES_HOST", "localhost")
+    port: int = int(os.getenv("POSTGRES_PORT", "8001"))
+    username: str = os.getenv("POSTGRES_USER", "tata")
+    password: str = os.getenv("POSTGRES_PASSWORD", "secret")
+    database: str = os.getenv("POSTGRES_DB", "scraping_db")
 
     @property
     def connection_string(self) -> str:

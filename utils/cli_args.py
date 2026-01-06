@@ -17,9 +17,5 @@ def get_cli_args():
     parser.add_argument("--export-csv", action="store_true", help="Export to CSV")
     parser.add_argument("--export-json", action="store_true", help="Export to JSON")
     parser.add_argument("--backup", action="store_true", help="Create backup")
-
-    #api pipeline
-    parser.add_argument("--city", type=str, help="Search a city")
-
-
+    
     return parser.parse_args()

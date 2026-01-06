@@ -1,13 +1,13 @@
 # Web Scraping
 requests==2.32.5
 beautifulsoup4==4.14.3
-lxml==5.1.0
+lxml==6.0.2
 fake-useragent==2.2.0
 
 # Stockage
 minio==7.2.3
 pymongo==4.15.5
-#psycopg==3.2.13
+psycopg==3.2.13
 psycopg-binary==3.2.13
 
 # Utilitaires
@@ -16,7 +16,7 @@ structlog==24.1.0
 tenacity==8.2.3
 tqdm==4.66.1
 
-
 # Traitement de données
 pandas==2.3.3
 numpy==2.3.5
+openpyxl==3.1.5

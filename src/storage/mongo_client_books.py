@@ -32,13 +32,13 @@ class MongoDBStorageBooks:
 
     def insert_book(self, book: dict) -> None:
         """
-        Insère ou met à jour un livre.
+       Insert or update a quote.
         
         Args:
             book: {title, rating,...}
             
         Returns:
-            ID du document ou None
+            ID of the document or None
         """
         try:
             book["updated_at"] = datetime.utcnow()
@@ -69,7 +69,7 @@ class MongoDBStorageBooks:
         duration_seconds: float,
         errors: list = None
     ) -> None:
-        """Enregistre un log de scraping."""
+        """Save the scraping logs."""
         self.scraping_logs.insert_one({
             "timestamp": datetime.utcnow(),
             "status": status,
@@ -79,5 +79,5 @@ class MongoDBStorageBooks:
         })
 
     def close(self) -> None:
-        """Ferme la connexion."""
+        """Close the connexion to MongoDB."""
         self.client.close()

@@ -42,11 +42,11 @@ class MinIOStorage:
         content_type: str = "application/octet-stream"
     ) -> Optional[str]:
         """
-        Upload un fichier d'export.
+        Upload an export file.
         
         Args:
-            data: Contenu du fichier
-            filename: Nom du fichier
+            data: file'scontent
+            filename: name's file
             content_type: Type MIME
             
         Returns:
@@ -70,12 +70,12 @@ class MinIOStorage:
             return None
     
     def upload_json(self, data: dict, filename: str) -> Optional[str]:
-        """Upload un fichier JSON."""
+        """upload a JSON file."""
         json_bytes = json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8")
         return self.upload_export(json_bytes, filename, "application/json")
     
     def upload_csv(self, csv_content: str, filename: str) -> Optional[str]:
-        """Upload un fichier CSV."""
+        """upload a csv file."""
         return self.upload_export(
             csv_content.encode("utf-8"),
             filename,
@@ -84,11 +84,11 @@ class MinIOStorage:
     
     def create_backup(self, data: dict, prefix: str = "backup") -> Optional[str]:
         """
-        Crée une sauvegarde horodatée.
+        create a dated backup.
         
         Args:
-            data: Données à sauvegarder
-            prefix: Préfixe du fichier
+            data:data to save
+            prefix: prefix of the backup
             
         Returns:
             URI MinIO
@@ -121,7 +121,7 @@ class MinIOStorage:
         filename: str,
         content_type: str = "image/jpeg"
     ) -> Optional[str]:
-        """Upload une image d'auteur."""
+        """Upload an author picture."""
         try:
             self.client.put_object(
                 bucket_name=minio_config.bucket_images,
@@ -138,7 +138,7 @@ class MinIOStorage:
             return None
     
     def get_object(self, bucket: str, filename: str) -> Optional[bytes]:
-        """Télécharge un objet."""
+        """download an object."""
         try:
             response = self.client.get_object(bucket, filename)
             data = response.read()
@@ -149,7 +149,7 @@ class MinIOStorage:
             return None
     
     def list_objects(self, bucket: str, prefix: str = "") -> list[dict]:
-        """Liste les objets d'un bucket."""
+        """Liste all bucket's object."""
         objects = self.client.list_objects(bucket, prefix=prefix, recursive=True)
         return [
             {
@@ -161,15 +161,15 @@ class MinIOStorage:
         ]
     
     def list_exports(self) -> list[dict]:
-        """Liste tous les exports."""
+        """List all exports."""
         return self.list_objects(minio_config.bucket_exports)
     
     def list_backups(self) -> list[dict]:
-        """Liste toutes les sauvegardes."""
+        """List all backups."""
         return self.list_objects(minio_config.bucket_backups)
     
     def delete_object(self, bucket: str, filename: str) -> bool:
-        """Supprime un objet."""
+        """delete an object."""
         try:
             self.client.remove_object(bucket, filename)
             return True
@@ -182,7 +182,7 @@ class MinIOStorage:
         filename: str,
         expires_hours: int = 24
     ) -> Optional[str]:
-        """Génère une URL temporaire."""
+        """generates a presigned url."""
         from datetime import timedelta
         try:
             return self.client.presigned_get_object(
@@ -194,7 +194,7 @@ class MinIOStorage:
             return None
     
     def get_storage_stats(self) -> dict:
-        """Retourne les statistiques de stockage."""
+        """return storage stats."""
         stats = {}
         
         for bucket in [minio_config.bucket_exports, minio_config.bucket_backups]:

@@ -17,7 +17,7 @@ logger = structlog.get_logger()
 
 @dataclass
 class Book:
-    """Représentation d'un livre."""
+    """Represent a book."""
     title: str
     price: str
     rating: str
@@ -25,7 +25,7 @@ class Book:
     category: str
 
     def to_dict(self) -> dict:
-        """Convertit en dictionnaire pour MongoDB."""
+        """Convert into dictionary for MongoDB."""
         return {
             "title": self.title,
             "price": self.price,
@@ -35,6 +35,13 @@ class Book:
         }
     
 class BooksScraper:
+    """
+    Scraper for the Books to Scrape website.
+
+    functionnalities:
+    - Scraping of books with pagination with extracted data (title, price, rating, availability, category).
+
+    """
     def __init__(self):
         self.base_url = scraper_books_config.base_url
         self.delay = scraper_books_config.delay
@@ -43,7 +50,7 @@ class BooksScraper:
         self._setup_session()
 
     def _setup_session(self) -> None:
-        """Configure la session HTTP."""
+        """Configure an HTTP session."""
         self.session.headers.update({
             "User-Agent": self.ua.random,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -56,10 +63,12 @@ class BooksScraper:
         max_pages: int = None
     ) -> dict:
         """
-        Scrape complet : livres (titre, prix, note, disponibilité, catégorie).
+
+
+        Full scraping of books (title, price, rating, availability, category).
         
         Args:
-            max_pages: Limite de pages
+            max_pages: pages limit
             
         Returns:
             {books: [...]}
@@ -80,10 +89,10 @@ class BooksScraper:
         max_pages: int = None
     ) -> Generator[Book, None, None]:
         """
-        Scrape tous les livres avec pagination.
+        scrape all books with pagination
         
         Args:
-            max_pages: Limite de pages (None = toutes)
+            max_pages: pages limit (None = toutes)
             
         Yields:
             Objets Book
@@ -105,7 +114,7 @@ class BooksScraper:
             if not links_details_books:
                 break
 
-            for details_book in links_details_books[:2]: #TODO ENLEVER [:2]
+            for details_book in links_details_books:
                 details_book_url = urljoin(url, details_book["href"])
 
                 soup_detail = self._fetch_page(details_book_url)
@@ -126,21 +135,20 @@ class BooksScraper:
     )
     def _fetch_page(self, url: str) -> Optional[BeautifulSoup]:
         """
-        Récupère et parse une page.
+        Fetch a page
         
         Args:
-            url: URL à récupérer
+            url: url to fetch
             
         Returns:
-            BeautifulSoup ou None
+            BeautifulSoup or None
         """
         try:
             logger.debug("fetching", url=url)
             response = self.session.get(url, timeout=scraper_books_config.timeout)
 
             response.raise_for_status()
-            
-            # Politesse
+
             time.sleep(self.delay)
             
             return BeautifulSoup(response.content, "lxml")
@@ -150,21 +158,22 @@ class BooksScraper:
             raise
     
     def _parse_book(self, div: str) -> Optional[Book]:
+        """Parse a book."""
+
         title = div.select_one("h1").text.strip()
         price = div.select_one(".price_color").text.strip()
         rating = div.select_one("p.star-rating")["class"][1]
-        #availability = div.select_one(".instock.availability").find_all(text=True)[-1].strip()
         availability = int(re.search(r'\d+', div.select_one(".instock.availability").find_all(text=True)[-1]).group())
         category = div.select("ul.breadcrumb li a")[2].text.strip()
 
-        # Convertir le prix en euros
+        #transform currency
         price = self._change_currency(price)
 
         return Book(title=title, price=price, rating=rating, availability=availability, category=category)
 
 
     def _get_next_page(self, soup: BeautifulSoup, url: str) -> Optional[str]:
-        """Trouve l'URL de la page suivante."""
+        """Find the URL of the next page."""
         next_li = soup.find("li", class_="next")
 
         if next_li:
@@ -178,8 +187,9 @@ class BooksScraper:
         return None
     
     def _change_currency(self, price: str) -> str:
+        """Convert the price to euros."""
         return price.replace("£", "€")
     
     def close(self) -> None:
-        """Ferme la session."""
+        """Close the session."""
         self.session.close()

@@ -76,7 +76,7 @@ class QuotesScraper:
         self.authors_cache: dict[str, Author] = {}
     
     def _setup_session(self) -> None:
-        """Configure la session HTTP."""
+        """Configure an HTTP session."""
         self.session.headers.update({
             "User-Agent": self.ua.random,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -90,13 +90,13 @@ class QuotesScraper:
     )
     def _fetch(self, url: str) -> Optional[BeautifulSoup]:
         """
-        Récupère et parse une page.
+        fetch a page
         
         Args:
-            url: URL à récupérer
+            url: URL to fetch URL
             
         Returns:
-            BeautifulSoup ou None
+            BeautifulSoup or None
         """
         try:
             logger.debug("fetching", url=url)
@@ -114,7 +114,7 @@ class QuotesScraper:
             raise
     
     def _clean_text(self, text: str) -> str:
-        """Nettoie le texte d'une citation."""
+        """ Cleans the text of a quote."""
         # Supprimer les guillemets décoratifs
         text = text.strip()
         text = re.sub(r'^[""\u201c\u201d]+|[""\u201c\u201d]+$', '', text)
@@ -122,13 +122,13 @@ class QuotesScraper:
     
     def scrape_quotes_page(self, url: str) -> list[Quote]:
         """
-        Scrape une page de citations.
+        Scrape a quote page and return a list of quotes .
         
         Args:
-            url: URL de la page
+            url: page URL
             
         Returns:
-            Liste de citations
+            quotes list
         """
         soup = self._fetch(url)
         if not soup:
@@ -146,13 +146,13 @@ class QuotesScraper:
     
     def _parse_quote(self, element) -> Optional[Quote]:
         """
-        Parse un élément de citation.
+        Parse a quote element.
         
         Args:
-            element: Élément BeautifulSoup
+            element: BeautifulSoup element 
             
         Returns:
-            Objet Quote ou None
+            Objet Quote or None
         """
         try:
             # Texte de la citation
@@ -192,10 +192,10 @@ class QuotesScraper:
         max_pages: int = None
     ) -> Generator[Quote, None, None]:
         """
-        Scrape toutes les citations avec pagination.
+        scrape all quotes.
         
         Args:
-            max_pages: Limite de pages (None = toutes)
+            max_pages:page limits (None = all)
             
         Yields:
             Objets Quote
@@ -225,7 +225,7 @@ class QuotesScraper:
             page += 1
     
     def _get_next_page(self, soup: BeautifulSoup) -> Optional[str]:
-        """Trouve l'URL de la page suivante."""
+        """Find the URL of the next page."""
         next_li = soup.find("li", class_="next")
         
         if next_li:
@@ -237,13 +237,13 @@ class QuotesScraper:
     
     def scrape_author(self, url: str) -> Optional[Author]:
         """
-        Scrape les détails d'un auteur.
+        Scrape details of an author.
         
         Args:
-            url: URL de la page auteur
+            url: page URL authro
             
         Returns:
-            Objet Author ou None
+            Objet Author or None
         """
         # Vérifier le cache
         if url in self.authors_cache:
@@ -296,11 +296,11 @@ class QuotesScraper:
         max_pages: int = 5
     ) -> Generator[Quote, None, None]:
         """
-        Scrape les citations par tag.
+        Scrape tag quotes.
         
         Args:
-            tag: Nom du tag
-            max_pages: Limite de pages
+            tag: tag name
+            max_pages: page limits
             
         Yields:
             Objets Quote
@@ -325,10 +325,10 @@ class QuotesScraper:
     
     def get_available_tags(self) -> list[str]:
         """
-        Récupère la liste des tags disponibles.
+        get list of available tags
         
         Returns:
-            Liste des tags
+           tags list
         """
         soup = self._fetch(self.base_url)
         if not soup:
@@ -349,11 +349,11 @@ class QuotesScraper:
         include_authors: bool = True
     ) -> dict:
         """
-        Scrape complet : citations + auteurs.
+        complete Scrape : quotes + authors.
         
         Args:
-            max_pages: Limite de pages
-            include_authors: Scraper aussi les auteurs
+            max_pages: limit pages
+            include_authors: Scrape author too
             
         Returns:
             {quotes: [...], authors: [...]}
