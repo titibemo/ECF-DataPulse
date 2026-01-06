@@ -121,7 +121,7 @@ class MinIOStorage:
         filename: str,
         content_type: str = "image/jpeg"
     ) -> Optional[str]:
-        """Upload an author picture."""
+        """Upload a picture."""
         try:
             self.client.put_object(
                 bucket_name=minio_config.bucket_images,

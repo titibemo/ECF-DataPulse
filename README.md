@@ -13,7 +13,6 @@
         -   [Scraping Quotes to Scrape](#quotes-to-scrape)
         -   [Scraping books to Scrape](#books-to-scrape)
         -   [API api-adresse.data.gouv.fr](#api)
-
 4. [Installation and configuration](#installation-and-configuration)
    - [Installation](#installation)
    - [Configuration](#configuration)
@@ -24,11 +23,12 @@
             - [MinIO](#minIO)
         - [Api](#api)
 5. [Usage](#usage)
+   - [CLI arguments](#cli-arguments)
    - [Books pipeline](#books-pipeline)
    - [Quotes Pipeline](#quotes-pipeline)
    - [Excel pipeline](#excel-pipeline)
 6. [Authors](#authors)
-6. [License](#license)
+7. [License](#license)
  
 ---
  
@@ -141,15 +141,19 @@ project-root/
 
 ## Target architecture
 
+Every target get some additionnal features with minIO, these features are available with the cli arguments options.
+   - [CLI arguments](#cli-arguments)
+
+
 ### Scraping Quotes to Scrape
 
 ```bash
 ┌─────────────────────┐
 │  quotes.toscrape.com │
 │                     │
-│  • Citations        │
-│  • Auteurs          │
-│  • Tags             │
+│  • quotes           │
+│  • authors          │
+│  • tags             │
 └──────────┬──────────┘
            │ Scraping
            ▼
@@ -164,10 +168,14 @@ project-root/
 ┌─────────┐  ┌─────────┐
 │  MinIO  │  │ MongoDB │
 │         │  │         │
+│         │  │         │
 │ Exports │  │ Quotes  │
 │ Backups │  │ Authors │
 │ Images  │  │ Tags    │
+(optionnal)│ │         │
+│         │  │         │
 └─────────┘  └─────────┘
+     │           │
      │           │
      └─────┬─────┘
            ▼
@@ -184,11 +192,12 @@ project-root/
 ┌─────────────────────┐
 │  books.toscrape.com │
 │                     │
-│  • Titre             │
-│  • prix              │
-│  • note (1-5 étoiles) │
-│  •  disponibilité     │
-│  • catégorie         │  
+│  • title            │
+│  • price            │
+│  • rating           │
+│  •  availability    │
+│  • category         │  
+│  • picture          │  
 └──────────┬──────────┘
            │ Scraping
            ▼
@@ -203,11 +212,11 @@ project-root/
 ┌─────────┐  ┌─────────┐
 │  MinIO  │  │ MongoDB │
 │         │  │         │
-│ Exports │  │ title  │
-│ Backups │  │ price │
-│ Images  │  │ notation    │
+│         │  │ title   │
+│ Images  │  │ price   │
+│         │  │ notation│
 │         │  │ disponibility    │
-│         │  │ category    │
+│         │  │ category│
 └─────────┘  └─────────┘
      │           │
      └─────┬─────┘
@@ -222,46 +231,72 @@ project-root/
 
 
 ```bash
-┌──────────────────────────────────────────┐
-│   Load partner libraries data (Excel)    │
-│          using Pandas                    │
-│   partenaire_librairies.xlsx             │
-└───────────────┬──────────────────────────┘
-                │
-                │ Data cleaning & GDPR compliance
-                │ - Remove personal data
-                │ - Normalize addresses
-                │
-                ▼
-┌──────────────────────────────────────────┐
-│     French Address API                   │
-│     api-adresse.data.gouv.fr             │
-│                                          │
-│  Example response:                       │
-│  {                                       │
-│    "features": [{                        │
-│      "geometry": {                       │
-│        "coordinates": [2.308628, 48.850699]│
-│      },                                  │
-│      "properties": {                     │
-│        "label": "20 Avenue de Ségur       │
-│                  75007 Paris",            │
-│        "score": 0.95,                     │
-│        "city": "Paris",                   │
-│        "postcode": "75007"                │
-│      }                                   │
-│    }]                                    │
-│  }                                       │
-└───────────────┬──────────────────────────┘
-                │
-                │ Geocoded data persistence
-                │
-                ▼
-┌──────────────────────────────────────────┐
-│        PostgreSQL Database               │
-│        Stored via Python                 │
-│   (partner libraries + coordinates)     │
-└──────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│   Load partner libraries data (Excel)        │
+│                using Pandas                  │
+│        partenaire_librairies.xlsx            │
+└───────────────────────┬──────────────────────┘
+                        │
+                        │ Create backup (CSV)
+                        ▼
+            ┌──────────────────────────┐
+            │          MinIO            │
+            │                          │
+            │        Backups            │
+            │   (original Excel data)  │
+            └───────────────┬──────────┘
+                            │
+                            │ Data cleaning & GDPR compliance
+                            │ - Remove personal data
+                            │ - Normalize addresses
+                            ▼
+┌──────────────────────────────────────────────┐
+│         French Address API                   │
+│         api-adresse.data.gouv.fr             │
+│                                              │
+│  Example response:                           │
+│  {                                           │
+│    "features": [{                            │
+│      "geometry": {                           │
+│        "coordinates": [2.308628, 48.850699]  │
+│      },                                      │
+│      "properties": {                         │
+│        "label": "20 Avenue de Ségur           │
+│                  75007 Paris",                │
+│        "score": 0.95,                         │
+│        "city": "Paris",                       │
+│        "postcode": "75007"                    │
+│      }                                       │
+│    }]                                        │
+│  }                                           │
+└─────────────────┬────────────────────────────┘
+          ┌───────┴───────────┐
+          │   Data enrichment │
+          │ (latitude &       │
+          │  longitude)       │
+          ▼                   ▼
+  ┌────────────────┐   ┌──────────────────────┐
+  │      MinIO     │   │      PostgreSQL       │
+  │                │   │                      │
+  │                │   │  partner_libraries   │
+  │   Exports      │   │                      │
+  │(csv optional)  │   │  - name_library      │
+  │                │   │  - adresse           │
+  └────────────────┘   │  - postal_code       │
+                        │  - city              │
+                        │  - ca_by_year        │
+                        │  - date_partnering   │
+                        │  - speciality        │
+                        │  - longitude         │
+                        │  - latitude          │
+                        └─────────────_─┬───────┘
+                                        │
+                                        ▼
+┌──────────────────────────────────────────────┐
+│        Analytics / NLP / ML Datasets         │
+│   SQL analytics & future data exploitation  │
+└──────────────────────────────────────────────┘
+
 
 
 ```
@@ -478,7 +513,7 @@ class APIConfig:
 The application entry point is main.py. From the project root, open a terminal and run:
 
 ```bash
-python main.py --pipelines NAME_PIPELINE --OPTIONS NAME_OPTIONS
+python main.py --pipelines name_pipeline --OPTIONS NAME_OPTIONS
 ```
 
 **NOTE:** By default, scraping pipelines process 2 pages. To scrape more (or fewer) pages, use the --pages option.
@@ -488,8 +523,9 @@ python main.py --pipelines NAME_PIPELINE --OPTIONS NAME_OPTIONS
 python main.py --pipelines bookspipeline --pages 1
 ```
 
+### CLI arguments
 
-All command-line options are defined in utils/cli_args.py.
+All command-line options are defined in utils/cli_args.py. It adds additionnal options: 
 
 ```python
     # Global (required)
@@ -542,6 +578,8 @@ python main.py --pipeline quotespipeline --pages 5 --tags love life --export-jso
 ### Excel pipeline
 
 Loads partner libraries data from Excel, cleans it for GDPR compliance, enriches addresses using the French Address API, and stores the result in PostgreSQL.
+
+**NOTE**: A backup is automatically created to prevent accidental data loss and allow recovery of the original dataset.
 
 ```bash
 python main.py --pipelines excelpipeline

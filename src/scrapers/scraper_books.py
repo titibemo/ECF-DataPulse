@@ -11,6 +11,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 import structlog
 
 from config.settings import scraper_books_config
+from src.storage import MinIOStorage
 
 logger = structlog.get_logger()
 
@@ -23,6 +24,7 @@ class Book:
     rating: str
     availability: str
     category: str
+    picture: str
 
     def to_dict(self) -> dict:
         """Convert into dictionary for MongoDB."""
@@ -47,6 +49,7 @@ class BooksScraper:
         self.delay = scraper_books_config.delay
         self.session = requests.Session()
         self.ua = UserAgent()
+        self.minio = MinIOStorage()
         self._setup_session()
 
     def _setup_session(self) -> None:
@@ -84,6 +87,28 @@ class BooksScraper:
             "books": books,
         }
     
+    def download_image(self, url, filename):
+        """
+        Download and save an image from a given URL with the specified filename.
+    
+        Args:
+            url (str): URL of the image
+            filename (str): name of the image
+        """
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+
+            self.minio.upload_image(
+                image_data=response.content,
+                filename=filename
+            )
+        except Exception as e:
+            logger.error("image_download_failed", url=url, error=str(e))
+            return
+        
+
+    
     def scrape_all_books(
         self,
         max_pages: int = None
@@ -114,7 +139,7 @@ class BooksScraper:
             if not links_details_books:
                 break
 
-            for details_book in links_details_books:
+            for details_book in links_details_books: 
                 details_book_url = urljoin(url, details_book["href"])
 
                 soup_detail = self._fetch_page(details_book_url)
@@ -123,6 +148,8 @@ class BooksScraper:
 
                 book = self._parse_book(soup_detail)
                 if book:
+                    if book.picture:
+                        self.download_image(book.picture, book.title)
                     yield book
             
             # Page suivante
@@ -166,10 +193,14 @@ class BooksScraper:
         availability = int(re.search(r'\d+', div.select_one(".instock.availability").find_all(text=True)[-1]).group())
         category = div.select("ul.breadcrumb li a")[2].text.strip()
 
+        img_tag = div.select_one(".item.active img")
+        img_src = img_tag["src"]
+        img_url = urljoin(self.base_url, img_src)
+
         #transform currency
         price = self._change_currency(price)
 
-        return Book(title=title, price=price, rating=rating, availability=availability, category=category)
+        return Book(title=title, price=price, rating=rating, availability=availability, category=category,  picture=img_url)
 
 
     def _get_next_page(self, soup: BeautifulSoup, url: str) -> Optional[str]:
