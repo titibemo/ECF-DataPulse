@@ -71,7 +71,7 @@ class MinIOStorage:
     
     def upload_json(self, data: dict, filename: str) -> Optional[str]:
         """upload a JSON file."""
-        json_bytes = json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8")
+        json_bytes = json.dumps(data, indent=2, ensure_ascii=False, default=str).encode("utf-8")
         return self.upload_export(json_bytes, filename, "application/json")
     
     def upload_csv(self, csv_content: str, filename: str) -> Optional[str]:
