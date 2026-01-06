@@ -9,7 +9,7 @@ def get_cli_args():
     parser.add_argument("--pipeline", required=True, choices=["bookspipeline", "quotespipeline", "apipipeline", "excelpipeline"], help="Choose the pipeline to execute")
 
     ## scraping pipeline
-    parser.add_argument("--pages", type=int, default=1, help="Numbers of pages to scrape")
+    parser.add_argument("--pages", type=int, default=2, help="Numbers of pages to scrape")
 
     # quotespipeline
     parser.add_argument("--no-authors", action="store_true", help="Skip author details")
