@@ -59,9 +59,40 @@ class PostgresStorage:
                         latitude FLOAT    
                     );
                 """)
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS geocoding (
+                        id_geocoding INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                        postcode INT NOT NULL,
+                        citycode INT NOT NULL,
+                        city VARCHAR(255) NOT NULL
+                    );
+                """)
+
+    def library_exists(self, row: dict) -> bool:
+        """
+        Check if a library with the given longitude and latitude already exists in the partner_library table.
+
+        :param row: A dictionary containing the data of the library to check.
+        :type row: dict
+        :return: True if the library already exists, False otherwise.
+        :rtype: bool
+        """
+        with self._get_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT 1
+                    FROM partner_library
+                    WHERE longitude = %s AND latitude = %s;
+                    """,
+                    (
+                        row["longitude"],
+                        row["latitude"]
+                    )
+                )
+                return cursor.fetchone() is not None
 
     def insert_data(self, row: dict):
-        
         """
         Insert a row in the partner_library table.
         
@@ -77,6 +108,10 @@ class PostgresStorage:
                 - longitude (float)
                 - latitude (float)
         """
+        if self.library_exists(row):
+            logger.info("Library already exists, skipping", name=row["nom_librairie"])
+            return
+
         logger.info("Inserting data...")
 
         with self._get_connection() as conn:
@@ -98,3 +133,59 @@ class PostgresStorage:
                         row["latitude"]
                     )
                 )
+
+
+    def geo_exists(self, properties: dict) -> bool:
+        """
+        Check if a library with the given citycode already exists in the geocoding table.
+
+        :param row: A dictionary containing the data of the library to check.
+        :type row: dict
+        :return: True if the library already exists, False otherwise.
+        :rtype: bool
+        """
+        with self._get_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT 1
+                    FROM geocoding
+                    WHERE citycode = %s;
+                    """,
+                    (
+                        properties.get("citycode"),
+                    )
+                )
+                return cursor.fetchone() is not None
+
+    def insert_geocoding_data(self, properties: dict):
+        """
+        Insert a row in the geocoding table.
+        
+        Args:
+            row (dict): A dictionary containing the data to be inserted, with the following keys:
+                - postcode (int)
+                - citycode (int)
+                - city (str)
+        """
+        if self.geo_exists(properties):
+            logger.info("Geocoding already exists, skipping ")
+            return
+
+        logger.info("Inserting data in geocoding table...")
+
+        with self._get_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO geocoding (postcode, citycode, city)
+                    VALUES (%s, %s, %s);
+                    """,
+                    (
+                    properties.get("postcode"),
+                    properties.get("citycode"),
+                    properties.get("city"),
+                    )
+                )
+
+

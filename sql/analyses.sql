@@ -5,14 +5,14 @@ FROM partner_library;
 
 /* 2. Une requête avec jointure */
 SELECT
-    pl.nom_librairie,
-    pl.ville,
-    lg.latitude,
-    lg.longitude
+    pl.name_library,
+    pl.city,
+    geo.postcode,
+    geo.citycode
 FROM partner_library pl
-JOIN library_geocoding lg
-    ON pl.id_partner_library = lg.id_partner_library;
-
+JOIN geocoding geo
+    ON pl.city = geo.city;
+    
 /* 3. Une requête avec fonction de fenêtrage (window function) */
 
 

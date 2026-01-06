@@ -40,6 +40,7 @@ class ExcelPipeline:
         """Add latitude and longitude to the dataframe."""
 
         if coordinates and coordinates["features"] and len(coordinates["features"]) > 0:
+            logger.info(f"Coordinates found for index {index}, enriching data...")
             clean_data.at[index, "latitude"] = coordinates["features"][0]["geometry"]["coordinates"][0] or "NaN"
             clean_data.at[index, "longitude"] = coordinates["features"][0]["geometry"]["coordinates"][1] or "NaN"
             return clean_data
@@ -87,6 +88,10 @@ class ExcelPipeline:
         for index, row in clean_data.iterrows():
             address = f"{row['adresse']}, {row['code_postal']} {row['ville']}"
             geo = self.api.get_geocode(address)
+
+            if geo and geo.get("features") and len(geo["features"]) > 0:
+                properties = geo["features"][0]["properties"]
+                self.postgres.insert_geocoding_data(properties=properties)
 
             data_enrich = self.enrich_data(clean_data=clean_data, index=index, coordinates=geo)
 

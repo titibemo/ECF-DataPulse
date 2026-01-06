@@ -231,72 +231,84 @@ Every target get some additionnal features with minIO, these features are availa
 
 
 ```bash
-┌──────────────────────────────────────────────┐
-│   Load partner libraries data (Excel)        │
-│                using Pandas                  │
-│        partenaire_librairies.xlsx            │
-└───────────────────────┬──────────────────────┘
-                        │
-                        │ Create backup (CSV)
-                        ▼
-            ┌──────────────────────────┐
-            │          MinIO            │
-            │                          │
-            │        Backups            │
-            │   (original Excel data)  │
-            └───────────────┬──────────┘
+┌────────────────────────────────────────────────────┐
+│        Load partner libraries data (Excel)          │
+│                   using Pandas                     │
+│            partenaire_librairies.xlsx               │
+└───────────────────────────┬────────────────────────┘
                             │
-                            │ Data cleaning & GDPR compliance
-                            │ - Remove personal data
-                            │ - Normalize addresses
+                            │ Create backup (CSV)
                             ▼
-┌──────────────────────────────────────────────┐
-│         French Address API                   │
-│         api-adresse.data.gouv.fr             │
-│                                              │
-│  Example response:                           │
-│  {                                           │
-│    "features": [{                            │
-│      "geometry": {                           │
-│        "coordinates": [2.308628, 48.850699]  │
-│      },                                      │
-│      "properties": {                         │
-│        "label": "20 Avenue de Ségur           │
-│                  75007 Paris",                │
-│        "score": 0.95,                         │
-│        "city": "Paris",                       │
-│        "postcode": "75007"                    │
-│      }                                       │
-│    }]                                        │
-│  }                                           │
-└─────────────────┬────────────────────────────┘
-          ┌───────┴───────────┐
-          │   Data enrichment │
-          │ (latitude &       │
-          │  longitude)       │
-          ▼                   ▼
-  ┌────────────────┐   ┌──────────────────────┐
-  │      MinIO     │   │      PostgreSQL       │
-  │                │   │                      │
-  │                │   │  partner_libraries   │
-  │   Exports      │   │                      │
-  │(csv optional)  │   │  - name_library      │
-  │                │   │  - adresse           │
-  └────────────────┘   │  - postal_code       │
-                        │  - city              │
-                        │  - ca_by_year        │
-                        │  - date_partnering   │
-                        │  - speciality        │
-                        │  - longitude         │
-                        │  - latitude          │
-                        └─────────────_─┬───────┘
-                                        │
-                                        ▼
-┌──────────────────────────────────────────────┐
-│        Analytics / NLP / ML Datasets         │
-│   SQL analytics & future data exploitation  │
-└──────────────────────────────────────────────┘
-
+                ┌──────────────────────────┐
+                │          MinIO            │
+                │                          │
+                │        Backups            │
+                │   (original Excel data)  │
+                └───────────────┬──────────┘
+                                │
+                                │ Data cleaning & GDPR compliance
+                                │ - Remove personal data
+                                │ - Normalize addresses
+                                ▼
+┌────────────────────────────────────────────────────┐
+│              French Address API                    │
+│              api-adresse.data.gouv.fr              │
+│                                                    │
+│  Example response:                                 │
+│  {                                                 │
+│    "features": [{                                  │
+│      "geometry": {                                 │
+│        "coordinates": [2.308628, 48.850699]        │
+│      },                                            │
+│      "properties": {                               │
+│        "label": "20 Avenue de Ségur 75007 Paris",  │
+│        "score": 0.95,                               │
+│        "city": "Paris",                             │
+│        "postcode": "75007"                          │
+│      }                                             │
+│    }]                                              │
+│  }                                                 │
+└───────────────────────────┬────────────────────────┘
+                            │
+                            │ Store raw geocoding data
+                            ▼
+                ┌──────────────────────────┐
+                │        PostgreSQL        │
+                │                          │
+                │        geocoding         │
+                │                          │
+                │  - postcode              │
+                │  - citycode              │
+                │  - city                  │
+                └───────────────┬──────────┘
+                                │
+                                │ Data enrichment of the excel file
+                                │ (add latitude & longitude)
+                                ▼
+        ┌───────────────────────┴──────────────────────┐
+        │                                               │
+        ▼                                               ▼
+┌──────────────────────┐                  ┌──────────────────────────┐
+│        MinIO         │                  │        PostgreSQL         │
+│                      │                  │                          │
+│        Exports       │                  │    partner_libraries     │
+│   (CSV optional)     │                  │                          │
+│                      │                  │  - name_library          │
+└──────────────────────┘                  │  - adresse               │
+                                           │  - postal_code           │
+                                           │  - city                  │
+                                           │  - ca_by_year            │
+                                           │  - date_partnering       │
+                                           │  - speciality            │
+                                           │  - longitude             │
+                                           │  - latitude              │
+                                           └───────────────┬──────────┘
+                                                           │
+                                                           ▼
+                    ┌────────────────────────────────────────────────────┐
+                    │        Analytics / NLP / ML Datasets               │
+                    │   SQL analytics & future data exploitation         │
+                    └────────────────────────────────────────────────────┘
 
 
 ```
@@ -580,6 +592,7 @@ python main.py --pipeline quotespipeline --pages 5 --tags love life --export-jso
 Loads partner libraries data from Excel, cleans it for GDPR compliance, enriches addresses using the French Address API, and stores the result in PostgreSQL.
 
 **NOTE**: A backup is automatically created to prevent accidental data loss and allow recovery of the original dataset.
+Before being stored in the database, a verification is performed to check whether the library is already registered (based on its longitude and latitude). The same logic applies to geocoding data (based on the city code).
 
 ```bash
 python main.py --pipelines excelpipeline
