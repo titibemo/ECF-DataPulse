@@ -195,13 +195,6 @@ class QuotesPipeline:
         """Exporte toutes les données en JSON."""
         data = self.mongodb.get_all_data()
         timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-
-        # sinon erreur json serialisable
-        for quote in data["quotes"]:
-            if "scraped_at" in quote and isinstance(quote["scraped_at"], datetime):
-                quote["scraped_at"] = quote["scraped_at"].isoformat()
-            if "updated_at" in quote and isinstance(quote["updated_at"], datetime):
-                quote["updated_at"] = quote["updated_at"].isoformat()
         
         return self.minio.upload_json(data, f"full_export_{timestamp}.json")
     
