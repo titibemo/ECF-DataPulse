@@ -330,7 +330,7 @@ git clone https://github.com/titibemo/ECF-DataPulse
 2. Create a virtual environment to isolate dependencies : Navigate to the project root, open a terminal and run the followinf commands:
 ```bash
 # On windows
-python3 -m venv venv 
+python -m venv venv 
 venv\Scripts\activate         
 ```
 
